@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manjeet Menu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body,html{margin:0;padding:0;height:100%;background:transparent;overflow:hidden;color:#fff;font-family:Arial,sans-serif}
+  
+  #container{
+    position:fixed;top:8%;left:15px;width:380px;height:78vh;
+    background:rgba(20,0,0,0.95);border:2px solid #ff0033;
+    border-radius:12px;box-shadow:0 0 40px #ff0033,inset 0 0 30px rgba(255,0,51,0.15);
+    backdrop-filter:blur(8px);display:none;flex-direction:column;
+  }
+  /* === IMAGE BANNER === */
+  #banner{
+    width:100%;height:120px;background:#000 url('https://media.discordapp.net/attachments/1260159781080137781/1440927061387771935/image_1.png?ex=691fef66&is=691e9de6&hm=3b903e58e9ce0ae8e3bf7c2a28ca6cf0bc71b88da294811e3035b572b4d5e2a1&=&format=webp&quality=lossless&width=1376&height=860') center/cover no-repeat;
+    border-radius:10px 10px 0 0;border-bottom:3px solid #ff0033;
+    box-shadow:0 0 30px #ff0033;
+  }
+  #header{
+    padding:14px 0;text-align:center;font-size:32px;font-weight:900;letter-spacing:4px;
+    background:linear-gradient(90deg,#ff0033,#ffb3b3);background-clip:text;-webkit-background-clip:text;
+    color:transparent;text-shadow:0 0 20px #ff0033;
+  }
+  #path{
+    text-align:center;margin:10px 0 18px;font-size:15px;color:#ff6688;text-shadow:0 0 10px #ff0033;
+  }
+  #menu{flex:1;overflow-y:auto;padding:0 20px 10px}
+  .item{padding:16px 20px;margin:8px 0;background:rgba(255,255,255,0.03);border-radius:6px;
+    display:flex;justify-content:space-between;align-items:center;font-size:16px;transition:all 0.2s}
+  .item.hovered{background:#ff0033 !important;color:#fff;box-shadow:0 0 20px #ff0033}
+  .item.subMenu .right::after{content:">";font-size:22px;color:#ff6688}
+  .item.hovered .right::after{color:#fff}
+  #footer{background:rgba(0,0,0,0.8);padding:12px 0;text-align:center;font-size:14px;color:#ff6688;
+    border-top:2px solid #ff0033}
+  #player-count{color:#ff0033;font-weight:bold}
+</style>
+</head>
+<body>
+
+<div id="container">
+  <!-- PUT YOUR IMAGE URL HERE -->
+  <div id="banner" style="background-image:url('https://i.ibb.co/2j7k9kZ/manjeet-banner.png')"></div>
+  
+  <div id="header">MANJEET MENU</div>
+  <div id="path">Main Menu</div>
+  <div id="menu"></div>
+  <div id="footer">Manjeet Menu (v1.0.0) <span id="player-count">[0/64]</span></div>
+</div>
+
+<script>
+// ← Same exact working script as before (no changes needed)
+const container=document.getElementById('container'),path=document.getElementById('path'),
+menu=document.getElementById('menu'),playerCount=document.getElementById('player-count');
+
+let elements=[];
+
+function updatePath(p){path.textContent=p?.length?p.join(' > '):'Main Menu'}
+function render(el){
+  const d=document.createElement('div');d.className='item '+(el.type||'');
+  if(el.type==='subMenu')d.classList.add('subMenu');
+  let right='';
+  if(el.type?.includes('scrollable')) right=`<span class="right">${el.values?.[el.value-1]||''}</span>`;
+  if(el.type?.includes('slider')){
+    const v=el.value??el.min??0;
+    const pct=((v-(el.min||0))/((el.max||100)-(el.min||0)))*100;
+    right=`<div style="flex:1;margin:0 15px;height:6px;background:#333;border-radius:3px;position:relative">
+      <div style="height:100%;width:${pct}%;background:#ff0033;border-radius:3px"></div>
+      <div style="position:absolute;top:-9px;left:${pct}%;width:22px;height:22px;background:#fff;border-radius:50%;box-shadow:0 0 20px #ff0033;transform:translateX(-50%)"></div>
+    </div><span class="right">${v.toFixed(2)}</span>`;
+  }
+  d.innerHTML=`<span>${el.label}</span>${right}`;
+  return d;
+}
+function updateMenu(els,idx){
+  elements=els||[];menu.innerHTML='';
+  elements.forEach((e,i)=>{const it=render(e);if(i===idx)it.classList.add('hovered');menu.appendChild(it)});
+}
+function hover(idx){
+  document.querySelectorAll('.item').forEach((it,i)=>it.classList.toggle('hovered',i===idx));
+}
+
+window.addEventListener('message',e=>{
+  const d=e.data;
+  if(!d?.action)return;
+  if(d.action==='showUI'){
+    container.style.display=d.visible?'flex':'none';
+    if(d.visible){
+      updatePath(d.path);
+      updateMenu(d.elements,d.index);
+      if(d.playerCount!==undefined)playerCount.textContent=`[${d.playerCount}/64]`;
+    }
+  }
+  else if(d.action==='updateElements'){updatePath(d.path);updateMenu(d.elements,d.index)}
+  else if(d.action==='keydown')hover(d.index);
+});
+
+// Preview
+window.addEventListener('load',()=>setTimeout(()=>{
+  container.style.display='flex';
+  updatePath(['Main Menu']);
+  updateMenu([
+    {type:'subMenu',label:'Self'},{type:'subMenu',label:'Server'},
+    {type:'subMenu',label:'Weapon'},{type:'subMenu',label:'Vehicle'},
+    {type:'subMenu',label:'Emotes'},{type:'subMenu',label:'Teleports'},
+    {type:'subMenu',label:'Settings'}
+  ],4);
+  playerCount.textContent='[17/64]';
+},100));
+</script>
+</body>
+</html>
